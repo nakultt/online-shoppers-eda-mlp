@@ -1,0 +1,19 @@
+Field,Pandas dtype,Role,Unique values,Description
+Administrative,int64,Numerical,27,Number of account/administrative pages visited
+Administrative_Duration,float64,Numerical,3335,Total time on administrative pages (s)
+Informational,int64,Numerical,17,Number of informational pages visited
+Informational_Duration,float64,Numerical,1258,Total time on informational pages (s)
+ProductRelated,int64,Numerical,311,Number of product-related pages visited
+ProductRelated_Duration,float64,Numerical,9551,Total time on product-related pages (s)
+BounceRates,float64,Numerical,1872,Mean bounce rate of the pages visited
+ExitRates,float64,Numerical,4777,Mean exit rate of the pages visited
+PageValues,float64,Numerical,2704,Mean page value of pages visited before a transaction
+SpecialDay,float64,Numerical,6,Closeness of the visit to a special day (0 to 1)
+Month,str,Categorical,10,Month of the visit
+OperatingSystems,int64,Categorical,8,Operating system (integer code)
+Browser,int64,Categorical,13,Browser (integer code)
+Region,int64,Categorical,9,Geographic region (integer code)
+TrafficType,int64,Categorical,20,Traffic source (integer code)
+VisitorType,str,Categorical,3,"New, Returning or Other visitor"
+Weekend,bool,Categorical,2,Whether the visit fell on a weekend
+Revenue,bool,Target,2,Target: whether the session ended in a purchase

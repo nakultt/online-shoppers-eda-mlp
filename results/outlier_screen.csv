@@ -1,0 +1,11 @@
+Feature,Q1,Q3,Upper fence,IQR outliers,IQR outliers (%),|z|>3 raw,|z|>3 after log1p
+Administrative,0.0,4.0,10.0,404,3.3,213,0
+Administrative_Duration,0.0,94.7,236.75,1149,9.4,230,0
+Informational,0.0,0.0,0.0,2631,21.6,260,260
+Informational_Duration,0.0,0.0,0.0,2405,19.7,229,177
+ProductRelated,8.0,38.0,83.0,1007,8.3,236,6
+ProductRelated_Duration,193.0,1477.155,3403.387,951,7.8,217,630
+BounceRates,0.0,0.017,0.042,1428,11.7,593,596
+ExitRates,0.014,0.049,0.1,1325,10.9,599,595
+PageValues,0.0,0.0,0.0,2730,22.4,257,125
+SpecialDay,0.0,0.0,0.0,1249,10.2,478,478

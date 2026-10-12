@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Online Shoppers EDA Explorer</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface:#fcfcfb; --page:#f9f9f7; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+    --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,0.10);
+    --s1:#2a78d6; --s2:#eb6834; --off:#e1e0d9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --surface:#1a1a19; --page:#0d0d0d; --ink:#ffffff; --ink2:#c3c2b7; --muted:#898781;
+      --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
+      --s1:#3987e5; --s2:#d95926; --off:#383835;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface:#1a1a19; --page:#0d0d0d; --ink:#ffffff; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
+    --s1:#3987e5; --s2:#d95926; --off:#383835;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--page); color:var(--ink); font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { padding:18px 24px 8px; }
+  h1 { font-size:20px; margin:0 0 4px; font-weight:600; }
+  .sub { color:var(--ink2); font-size:13px; }
+  .controls { display:flex; flex-wrap:wrap; gap:12px 22px; padding:10px 24px 12px; align-items:flex-end; }
+  .ctl label { display:block; font-size:12px; color:var(--ink2); margin-bottom:4px; }
+  select { font:inherit; font-size:14px; padding:4px 6px; border:1px solid var(--axis); background:var(--surface); color:var(--ink); border-radius:6px; }
+  .seg { display:inline-flex; border:1px solid var(--axis); border-radius:6px; overflow:hidden; }
+  .seg button, .pill { font:inherit; font-size:13px; padding:4px 10px; border:0; background:var(--surface); color:var(--ink); cursor:pointer; }
+  .seg button + button { border-left:1px solid var(--axis); }
+  .seg button.on { background:var(--ink); color:var(--surface); }
+  .pills { display:flex; flex-wrap:wrap; gap:4px; }
+  .pill { border:1px solid var(--axis); border-radius:999px; }
+  .pill.on { background:var(--s1); border-color:var(--s1); color:#fff; }
+  .kpis { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:10px; padding:2px 24px 12px; }
+  .kpi { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:10px 14px; }
+  .kpi .v { font-size:24px; font-weight:600; }
+  .kpi .k { font-size:12px; color:var(--ink2); margin-top:2px; }
+  .grid { display:grid; grid-template-columns:1.35fr 1fr; gap:14px; padding:0 24px 14px; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px 14px 8px; min-width:0; }
+  .card h2 { font-size:14px; margin:0 0 3px; font-weight:600; }
+  .card p { font-size:12px; color:var(--ink2); margin:0 0 6px; }
+  .legend { display:flex; gap:14px; font-size:12px; color:var(--ink2); margin:2px 0 4px; }
+  .legend i { display:inline-block; width:14px; height:3px; border-radius:2px; vertical-align:middle; margin-right:5px; }
+  .wide { grid-column:1 / -1; }
+  svg { width:100%; height:auto; display:block; }
+  details { font-size:12px; color:var(--ink2); margin:4px 0 2px; }
+  table { border-collapse:collapse; margin-top:6px; font-variant-numeric:tabular-nums; }
+  th, td { padding:3px 10px; border-bottom:1px solid var(--grid); text-align:right; }
+  th:first-child, td:first-child { text-align:left; }
+  .tip { position:fixed; pointer-events:none; background:var(--ink); color:var(--surface); font-size:12px; padding:6px 8px; border-radius:6px; display:none; max-width:240px; line-height:1.35; }
+  footer { padding:4px 24px 18px; font-size:12px; color:var(--muted); }
+  @media (max-width: 760px) { .grid { grid-template-columns:1fr; } .kpis { grid-template-columns:repeat(2, minmax(0,1fr)); } header, .controls, .kpis, .grid, footer { padding-left:16px; padding-right:16px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Online Shoppers Purchasing Intention: Interactive EDA Explorer</h1>
+  <div class="sub">Interact stage of Fry's seven-stage visualization process. UCI dataset 468, 12,205 de-duplicated sessions. Nakul T (24AD068), U21ADP05.</div>
+</header>
+<div class="controls">
+  <div class="ctl"><label for="feat">Feature</label><select id="feat"></select></div>
+  <div class="ctl"><label>Scale</label><div class="seg" id="scale"><button data-v="lin">Linear</button><button data-v="log" class="on">log(1 + x)</button></div></div>
+  <div class="ctl"><label for="vis">Visitor type</label><select id="vis"><option>All</option><option>New</option><option>Returning</option><option>Other</option></select></div>
+  <div class="ctl"><label>Day type</label><div class="seg" id="day"><button data-v="all" class="on">All</button><button data-v="0">Weekday</button><button data-v="1">Weekend</button></div></div>
+  <div class="ctl"><label>Months (click to toggle)</label><div class="pills" id="months"></div></div>
+</div>
+<div class="kpis">
+  <div class="kpi"><div class="v" id="k1">-</div><div class="k">Sessions in current filter</div></div>
+  <div class="kpi"><div class="v" id="k2">-</div><div class="k">Purchases</div></div>
+  <div class="kpi"><div class="v" id="k3">-</div><div class="k">Conversion rate</div></div>
+  <div class="kpi"><div class="v" id="k4">-</div><div class="k">Median of feature: buyers / non-buyers</div></div>
+</div>
+<div class="grid">
+  <div class="card"><h2 id="t1">Distribution by class</h2><p>Each class is scaled to its own share so the two shapes can be compared. Hover for counts.</p>
+    <div class="legend"><span><i style="background:var(--s2)"></i>No purchase</span><span><i style="background:var(--s1)"></i>Purchase</span></div>
+    <svg id="c1" viewBox="0 0 640 300"></svg></div>
+  <div class="card"><h2>Conversion rate by month</h2><p>Recomputed for the current filters; months switched off are greyed.</p><svg id="c2" viewBox="0 0 460 300"></svg>
+    <details><summary>Table view</summary><table id="tb2"></table></details></div>
+  <div class="card wide"><h2 id="t3">Conversion rate across deciles of the feature</h2><p>Sessions are ranked by the selected feature and cut into ten equal-sized groups (tied values are kept together, so heavily zero-inflated features give fewer groups).</p><svg id="c3" viewBox="0 0 1100 250"></svg>
+    <details><summary>Table view</summary><table id="tb3"></table></details></div>
+</div>
+<footer>Self-contained page: no external libraries or network access are required. Generated by notebooks/shoppers_eda_mlp.ipynb.</footer>
+<div class="tip" id="tip"></div>
+<script>
+const THEME = new URLSearchParams(location.search).get("theme");
+if (THEME === "light" || THEME === "dark") document.documentElement.setAttribute("data-theme", THEME);
+const D = /*__DATA__*/null;
+const N = D.y.length;
+const state = { feat: "PageValues", scale: "log", vis: "All", day: "all", months: new Set(D.months) };
+const NS = "http://www.w3.org/2000/svg";
+const tip = document.getElementById("tip");
+let C = {};
+function readColors() { const s = getComputedStyle(document.documentElement); ["surface","ink","ink2","muted","grid","axis","s1","s2","off"].forEach(k => C[k] = s.getPropertyValue("--" + k).trim()); }
+function el(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+function text(parent, x, y, s, attrs = {}) { const t = el("text", Object.assign({ x, y, "font-size": 12, fill: C.ink2, "font-family": "system-ui, Segoe UI, sans-serif" }, attrs), parent); t.textContent = s; return t; }
+function hover(node, html) {
+  node.addEventListener("mousemove", ev => { tip.style.display = "block"; tip.innerHTML = html; tip.style.left = (ev.clientX + 14) + "px"; tip.style.top = (ev.clientY + 10) + "px"; });
+  node.addEventListener("mouseleave", () => { tip.style.display = "none"; });
+}
+function fmt(v) { return Math.abs(v) >= 100 ? v.toFixed(0) : Math.abs(v) >= 1 ? v.toFixed(2) : v.toFixed(3); }
+function niceStep(v) { const e = Math.pow(10, Math.floor(Math.log10(v))); const f = v / e; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * e; }
+function median(a) { if (!a.length) return NaN; const s = a.slice().sort((x, y) => x - y); const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; }
+function selected() {
+  const idx = [];
+  for (let i = 0; i < N; i++) {
+    if (state.vis !== "All" && D.visitor[i] !== state.vis) continue;
+    if (state.day !== "all" && String(D.weekend[i]) !== state.day) continue;
+    if (!state.months.has(D.month[i])) continue;
+    idx.push(i);
+  }
+  return idx;
+}
+function yAxis(svg, W, H, m, rawMax, pct) {
+  const step = niceStep(Math.max(rawMax, 1e-9) / 4), top = Math.ceil(rawMax / step) * step || step;
+  const Y = v => H - m.b - v / top * (H - m.t - m.b);
+  for (let v = 0; v <= top + 1e-12; v += step) {
+    el("line", { x1: m.l, x2: W - m.r, y1: Y(v), y2: Y(v), stroke: C.grid }, svg);
+    text(svg, m.l - 6, Y(v) + 4, pct ? (100 * v).toFixed(step * 100 < 1 ? 1 : 0) + "%" : fmt(v), { "text-anchor": "end", "font-size": 11, fill: C.muted });
+  }
+  el("line", { x1: m.l, x2: W - m.r, y1: H - m.b, y2: H - m.b, stroke: C.axis }, svg);
+  return Y;
+}
+function drawHist(idx) {
+  const svg = document.getElementById("c1"); svg.innerHTML = "";
+  const W = 640, H = 300, m = { l: 52, r: 14, t: 12, b: 42 };
+  const raw = D.cols[state.feat];
+  const tf = v => state.scale === "log" ? Math.log1p(v) : v;
+  const vals = idx.map(i => tf(raw[i]));
+  if (!vals.length) { text(svg, W / 2, H / 2, "No sessions match the filter", { "text-anchor": "middle" }); return; }
+  let lo = Math.min(...vals), hi = Math.max(...vals); if (hi === lo) hi = lo + 1;
+  const B = 30, bw = (hi - lo) / B;
+  const c0 = new Array(B).fill(0), c1 = new Array(B).fill(0);
+  let n0 = 0, n1 = 0;
+  idx.forEach((i, k) => { const b = Math.min(B - 1, Math.floor((vals[k] - lo) / bw)); if (D.y[i]) { c1[b]++; n1++; } else { c0[b]++; n0++; } });
+  const s0 = c0.map(c => n0 ? c / n0 : 0), s1 = c1.map(c => n1 ? c / n1 : 0);
+  const Y = yAxis(svg, W, H, m, Math.max(...s0, ...s1), true);
+  const X = v => m.l + (v - lo) / (hi - lo) * (W - m.l - m.r);
+  for (let k = 0; k <= 5; k++) { const v = lo + (hi - lo) * k / 5; text(svg, X(v), H - m.b + 15, fmt(v), { "text-anchor": "middle", "font-size": 11, fill: C.muted }); }
+  for (let b = 0; b < B; b++) {
+    const x0 = X(lo + b * bw), x1 = X(lo + (b + 1) * bw);
+    el("rect", { x: x0 + 1, y: Y(s0[b]), width: Math.max(0, x1 - x0 - 2), height: Y(0) - Y(s0[b]), fill: C.s2, "fill-opacity": 0.45 }, svg);
+    const hit = el("rect", { x: x0, y: m.t, width: x1 - x0, height: H - m.t - m.b, fill: "transparent" }, svg);
+    hover(hit, `<b>${fmt(lo + b * bw)} to ${fmt(lo + (b + 1) * bw)}</b>${state.scale === "log" ? " (log scale)" : ""}<br>No purchase: ${c0[b]} (${(100 * s0[b]).toFixed(1)}%)<br>Purchase: ${c1[b]} (${(100 * s1[b]).toFixed(1)}%)`);
+  }
+  let d = "";
+  for (let b = 0; b < B; b++) { const x0 = X(lo + b * bw), x1 = X(lo + (b + 1) * bw), y = Y(s1[b]); d += (b ? "L" : "M") + x0 + "," + y + "L" + x1 + "," + y; }
+  el("path", { d, fill: "none", stroke: C.s1, "stroke-width": 2, "stroke-linejoin": "round" }, svg);
+  text(svg, (m.l + W - m.r) / 2, H - 6, (state.scale === "log" ? "log(1 + " + state.feat + ")" : state.feat), { "text-anchor": "middle", fill: C.ink2 });
+}
+function drawMonths(idx) {
+  const svg = document.getElementById("c2"); svg.innerHTML = "";
+  const W = 460, H = 300, m = { l: 46, r: 10, t: 12, b: 42 };
+  const tot = {}, buy = {}; D.months.forEach(k => { tot[k] = 0; buy[k] = 0; });
+  idx.forEach(i => { tot[D.month[i]]++; buy[D.month[i]] += D.y[i]; });
+  const rates = D.months.map(k => tot[k] ? buy[k] / tot[k] : 0);
+  const Y = yAxis(svg, W, H, m, Math.max(0.05, ...rates), true);
+  const slot = (W - m.l - m.r) / D.months.length;
+  let rows = "<tr><th>Month</th><th>Sessions</th><th>Purchases</th><th>Conversion</th></tr>";
+  D.months.forEach((k, j) => {
+    const w = Math.min(24, slot * 0.6), x = m.l + j * slot + (slot - w) / 2;
+    const r = el("rect", { x, y: Y(rates[j]), width: w, height: Y(0) - Y(rates[j]), rx: 3, fill: state.months.has(k) ? C.s1 : C.off }, svg);
+    const hit = el("rect", { x: m.l + j * slot, y: m.t, width: slot, height: H - m.t - m.b, fill: "transparent" }, svg);
+    hover(hit, `<b>${k}</b><br>Sessions: ${tot[k]}<br>Purchases: ${buy[k]}<br>Conversion: ${(100 * rates[j]).toFixed(1)}%`);
+    text(svg, x + w / 2, H - m.b + 15, k, { "text-anchor": "middle", "font-size": 11, fill: C.muted });
+    rows += `<tr><td>${k}</td><td>${tot[k]}</td><td>${buy[k]}</td><td>${(100 * rates[j]).toFixed(1)}%</td></tr>`;
+  });
+  document.getElementById("tb2").innerHTML = rows;
+  text(svg, (m.l + W - m.r) / 2, H - 6, "Month of visit", { "text-anchor": "middle" });
+}
+function drawDeciles(idx) {
+  const svg = document.getElementById("c3"); svg.innerHTML = "";
+  const W = 1100, H = 250, m = { l: 52, r: 14, t: 16, b: 46 };
+  const raw = D.cols[state.feat];
+  const order = idx.slice().sort((a, b) => raw[a] - raw[b]);
+  const groups = []; const size = order.length / 10;
+  let start = 0;
+  for (let g = 0; g < 10 && start < order.length; g++) {
+    let end = Math.min(order.length, Math.round((g + 1) * size));
+    while (end < order.length && end > start && raw[order[end]] === raw[order[end - 1]]) end++;
+    if (end <= start) continue;
+    const part = order.slice(start, end);
+    groups.push({ lo: raw[part[0]], hi: raw[part[part.length - 1]], n: part.length, r: part.reduce((s, i) => s + D.y[i], 0) / part.length });
+    start = end;
+  }
+  const Y = yAxis(svg, W, H, m, Math.max(0.05, ...groups.map(g => g.r)), true);
+  const slot = (W - m.l - m.r) / Math.max(1, groups.length);
+  let rows = `<tr><th>Group</th><th>${state.feat} range</th><th>Sessions</th><th>Conversion</th></tr>`;
+  groups.forEach((g, j) => {
+    const w = Math.min(24, slot * 0.6), x = m.l + j * slot + (slot - w) / 2;
+    el("rect", { x, y: Y(g.r), width: w, height: Y(0) - Y(g.r), rx: 3, fill: C.s1 }, svg);
+    const hit = el("rect", { x: m.l + j * slot, y: m.t, width: slot, height: H - m.t - m.b, fill: "transparent" }, svg);
+    hover(hit, `<b>Group ${j + 1}</b><br>${state.feat}: ${fmt(g.lo)} to ${fmt(g.hi)}<br>Sessions: ${g.n}<br>Conversion: ${(100 * g.r).toFixed(1)}%`);
+    text(svg, x + w / 2, Y(g.r) - 6, (100 * g.r).toFixed(1) + "%", { "text-anchor": "middle", "font-size": 11, fill: C.ink });
+    text(svg, m.l + j * slot + slot / 2, H - m.b + 15, `${fmt(g.lo)} to ${fmt(g.hi)}`, { "text-anchor": "middle", "font-size": 10.5, fill: C.muted });
+    rows += `<tr><td>${j + 1}</td><td>${fmt(g.lo)} to ${fmt(g.hi)}</td><td>${g.n}</td><td>${(100 * g.r).toFixed(1)}%</td></tr>`;
+  });
+  document.getElementById("tb3").innerHTML = rows;
+  text(svg, (m.l + W - m.r) / 2, H - 8, `${state.feat} range of each group (raw units)`, { "text-anchor": "middle" });
+}
+function render() {
+  readColors();
+  const idx = selected();
+  const nb = idx.reduce((s, i) => s + D.y[i], 0);
+  const raw = D.cols[state.feat];
+  document.getElementById("k1").textContent = idx.length.toLocaleString();
+  document.getElementById("k2").textContent = nb.toLocaleString();
+  document.getElementById("k3").textContent = idx.length ? (100 * nb / idx.length).toFixed(1) + "%" : "-";
+  const mb = median(idx.filter(i => D.y[i]).map(i => raw[i])), mn = median(idx.filter(i => !D.y[i]).map(i => raw[i]));
+  document.getElementById("k4").textContent = isNaN(mb) ? "-" : `${fmt(mb)} / ${fmt(mn)}`;
+  document.getElementById("t1").textContent = `Distribution of ${state.feat} by class`;
+  document.getElementById("t3").textContent = `Conversion rate across deciles of ${state.feat}`;
+  drawHist(idx); drawMonths(idx); drawDeciles(idx);
+}
+const fs = document.getElementById("feat");
+D.num.forEach(c => { const o = document.createElement("option"); o.value = c; o.textContent = c; if (c === state.feat) o.selected = true; fs.appendChild(o); });
+fs.onchange = () => { state.feat = fs.value; render(); };
+document.getElementById("vis").onchange = e => { state.vis = e.target.value; render(); };
+function seg(id, key) {
+  document.querySelectorAll(`#${id} button`).forEach(b => b.onclick = () => {
+    document.querySelectorAll(`#${id} button`).forEach(x => x.classList.remove("on"));
+    b.classList.add("on"); state[key] = b.dataset.v; render();
+  });
+}
+seg("scale", "scale"); seg("day", "day");
+const mp = document.getElementById("months");
+D.months.forEach(k => {
+  const b = document.createElement("button"); b.className = "pill on"; b.textContent = k;
+  b.onclick = () => { if (state.months.has(k)) { if (state.months.size > 1) state.months.delete(k); } else state.months.add(k); b.classList.toggle("on", state.months.has(k)); render(); };
+  mp.appendChild(b);
+});
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
+render();
+</script>
+</body>
+</html>
